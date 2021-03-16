@@ -32,13 +32,15 @@ namespace GF_10
             double yy = pictureBox1.Size.Height - y * (pictureBox1.Size.Height / 7.0) + 0.5;
             return (int)yy;
         }
+        //
+        /*Рисование в координатной плоскости 10 на 7*/
         private void Draw(double x1, double y1, double x2, double y2)
         {
             Point point1 = new Point(IX(x1), IY(y1));
             Point point2 = new Point(IX(x2), IY(y2));
             g.DrawLine(p, point1, point2);
         }
-
+        //
         private void button2_Click(object sender, EventArgs e)
         {
             g.Clear(Color.White);
@@ -50,16 +52,10 @@ namespace GF_10
             Draw(1.0f, 3.0f, 9.0f, 3.0f);
         }
 
-        //
-        /*Алгоритм Коэна-Сазерленда*/
-        private uint Code(double x, double y)
+        private void Form1_Load(object sender, EventArgs e)
         {
-            return (uint)((Convert.ToUInt16(x < xmin) << 3) |
-            (Convert.ToUInt16(x > xmax) << 2) |
-            (Convert.ToUInt16(y < ymin) << 1) |
-            Convert.ToUInt16(y > ymax));
+
         }
-        //
         private void button1_Click(object sender, EventArgs e)
         {
             g.Clear(Color.White);
