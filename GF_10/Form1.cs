@@ -12,14 +12,16 @@ namespace GF_10
 {
     public partial class Form1 : Form
     {
-        float xmin = 2.0f, xmax = 8.0f, ymin = 2.0f, ymax = 5.0f;
-        Graphics g; Pen p; Pen line;
+        PointF mid;
+        PointF[] mainP = new PointF[2] { new PointF(2.0f, 1.0f), new PointF(8.0f, 6.0f) };
+        Graphics g; Pen p; Pen line; PointF[] points;
         public Form1()
         {
             InitializeComponent();
             g = pictureBox1.CreateGraphics();
             p = new Pen(Color.Black, 1);
             line = new Pen(Color.Red, 1);
+            points = new PointF[3] { new PointF(1.0f, 2.0f), new PointF(9.0f, 4.0f), new PointF(5.0f, 3.0f) };
         }
         /* Метод преобразования вещественных координат X и Y в целые (10 на 7) */
         private int IX(double x)
@@ -34,22 +36,30 @@ namespace GF_10
         }
         //
         /*Рисование в координатной плоскости 10 на 7*/
-        private void Draw(double x1, double y1, double x2, double y2)
+        private void Draw(PointF f, PointF s)
         {
-            Point point1 = new Point(IX(x1), IY(y1));
-            Point point2 = new Point(IX(x2), IY(y2));
+            Point point1 = new Point(IX(f.X), IY(f.Y));
+            Point point2 = new Point(IX(s.X), IY(s.Y));
             g.DrawLine(p, point1, point2);
         }
         //
+        private uint code(double x, double y)
+        {
+            return (uint)((Convert.ToUInt16(x < mainP[0].X) << 3) |
+            (Convert.ToUInt16(x > mainP[1].X) << 2) |
+            (Convert.ToUInt16(y < mainP[0].Y) << 1) |
+             Convert.ToUInt16(y > mainP[1].Y));
+        }
         private void button2_Click(object sender, EventArgs e)
         {
             g.Clear(Color.White);
             p = new Pen(Color.Black, 1);
             /* Вычерчивание границ окна */
-            Draw(xmin, ymin, xmax, ymin); Draw(xmax, ymin, xmax, ymax);
-            Draw(xmax, ymax, xmin, ymax); Draw(xmin, ymax, xmin, ymin);
+            Draw(mainP[0], new PointF(mainP[1].X, mainP[0].Y)); Draw(new PointF(mainP[1].X, mainP[0].Y), mainP[1]);
+            Draw(mainP[1], new PointF(mainP[0].X, mainP[1].Y)); Draw(new PointF(mainP[0].X, mainP[1].Y), mainP[0]);
+            //
             p = line;
-            Draw(1.0f, 3.0f, 9.0f, 3.0f);
+            Draw(points[0], points[1]);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -60,33 +70,41 @@ namespace GF_10
         {
             g.Clear(Color.White);
             p = new Pen(Color.Black, 1);
-            Draw(xmin, ymin, xmax, ymin); Draw(xmax, ymin, xmax, ymax);
-            Draw(xmax, ymax, xmin, ymax); Draw(xmin, ymax, xmin, ymin);
-            PointF[] np = CutOff(1.0f, 3.0f, 9.0f, 3.0f, 0,1.0f, 1.0f, 9.0f);
+            Draw(mainP[0], new PointF(mainP[1].X, mainP[0].Y)); Draw(new PointF(mainP[1].X, mainP[0].Y), mainP[1]);
+            Draw(mainP[1], new PointF(mainP[0].X, mainP[1].Y)); Draw(new PointF(mainP[0].X, mainP[1].Y), mainP[0]);
             p = line;
-            Draw(np[0].X, np[0].Y, np[1].X, np[1].Y);
+            mid = points[2];
+            points = CutOff(points[0], points[1], mid, mid);
+            Draw(points[0], points[1]);
         }
-        private PointF[] CutOff(float x1, float y1, float x2, float y2, int count,float tmp, float tmp1, float tmp2)
+        private PointF[] CutOff(PointF f, PointF s,PointF mid1,PointF mid2)
         {
-            PointF[] points = new PointF[2];
-            points[0] = new PointF(x1, y1);
-            points[1] = new PointF(x2, y2);
+            float x1 = f.X, y1 = f.Y, x2 = s.X, y2 = s.Y;
+            PointF[] tmp;
 
-            double len = (x2 + x1) / 2;
-            if (count<2)
+            if (mid1.X > mainP[0].X && mid2.X < mainP[1].X)
             {
-                count++;
-                tmp = (float)len;
-                if(count==2) return CutOff(tmp1, y1, tmp2, y2, count, tmp, tmp1, tmp2);
-                return CutOff(x1, y1, (float)len, y2, count,tmp,tmp1,tmp2);
+                if (mid1.Y > mainP[0].Y && mid2.Y < mainP[1].Y)
+                {
+                    mid1 = new PointF((mid1.X + x1) / 2, (mid1.Y + y1) / 2);
+                    mid2 = new PointF((mid2.X + x2) / 2, (mid2.Y + y2) / 2);
+                    return CutOff(f, s, mid1, mid2);
+                }
             }
-            if (count < 4 && count >= 1)
+            else if (mid1.X <= mainP[0].X && mid2.X >= mainP[1].X)
             {
-                count++;
-                if (count == 4) return CutOff(tmp, y1, (float)len, y2, count, tmp, tmp1, tmp2);
-                return CutOff((float)len, y1, x2, y2, count, tmp, tmp1, tmp2);
-            } 
-            return points;
+                if (mid1.Y <= mainP[0].Y && mid2.Y >= mainP[1].Y)
+                {
+                    x1 = mid1.X;
+                    y1 = mid1.Y;
+                    x2 = mid2.X;
+                    y2 = mid2.Y;
+                    tmp = new PointF[3] { new PointF(x1, y1), new PointF(x2, y2), new PointF((x1 + x2) / 2, (y1 + y2) / 2) };
+                    return tmp;
+                }
+            }
+            tmp = new PointF[3] { new PointF(x1, y1), new PointF(x2, y2), new PointF((x1 + x2) / 2, (y1 + y2) / 2) };
+            return tmp;
         }
     }
 }
